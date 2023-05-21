@@ -19,7 +19,7 @@ lr_D: 0.001
 D_steps_per_G_step: 2
 M_steps_per_D_step: 1
 batch_size: 64
-steps: 1
+steps: 30000
 gamma: 0.97
 #
 swa_step_start: 25000 

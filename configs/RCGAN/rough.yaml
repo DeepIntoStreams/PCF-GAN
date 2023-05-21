@@ -16,7 +16,7 @@ lr_G: 0.001
 lr_D: 0.001 
 D_steps_per_G_step: 2
 batch_size: 64
-steps: 1
+steps: 30000
 gamma: 0.97
 grad_clip: 10
 #

@@ -144,10 +144,9 @@ def main(config):
             strict=True,
         )
         generator.eval()
-    # d_score, p_score, sig_mmd = full_evaluation(
-    #    generator, train_dl, test_dl, config
-    # )
-    # generator = trainer.G.to('cpu')
+    d_score, p_score, sig_mmd = full_evaluation(
+        generator, train_dl, test_dl, config
+     )
 
     return d_score, p_score, sig_mmd
 

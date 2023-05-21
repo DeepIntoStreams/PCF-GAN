@@ -13,3 +13,4 @@ tqdm==4.64.0
 yfinance==0.2.12
 chardet
 gdown
+torchsde

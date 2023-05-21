@@ -26,7 +26,7 @@ The soruce code of the PCF-GAN is in the [PCF-GAN](src/PCFGAN/) subdirectory.
  One can modify yaml file in [configs](configs/) to further specify model parameters. After the model training and evaluation, the related model and plots will be store in the numerical_results folder.
 
 For the hypothesis experiment, one can run with
-```
+```console
 python3 PCF_HT.py
 ```
  For the first time user, it will takes some time to generate the dataset automaticall. Since GAN are computationally expensive to train, we also provide trained GAN models stored in [numerical_results](numerical_reuslts.zip), one can creae the numerical_results folder with all trained models on all benckmark datasets by
