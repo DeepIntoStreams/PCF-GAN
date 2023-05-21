@@ -3,6 +3,7 @@ PCF-GAN: generating sequential data via the characteristic function of measures 
 <p align="center">
 <img align="middle" src="./notebooks/PCF_score_plot_v4.png" width="666" />
 </p>
+
 This repository is the official implementation of the paper entitled "PCF-GAN: generating sequential data via the characteristic function of measures on the path space". The characteristic function on the path space can be thought of as an extension of the characteristic function on $\mathbb{R}^d$ and is illustrated by the figure above. This work demonstrates its effectiveness in the task of time series generation. This work demonstrates its effectiveness in the task of time series generation.   
 
 ## Environment Setup
