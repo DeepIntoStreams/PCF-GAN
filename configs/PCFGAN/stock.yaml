@@ -36,6 +36,7 @@ M_hidden_dim: 10
 M_num_samples: 6
 lr_M: 0.005
 Lambda1: 400
+Lambda2: 1
 init_range: 1
 BM: True
 add_time: True

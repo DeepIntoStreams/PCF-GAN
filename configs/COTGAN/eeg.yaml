@@ -19,6 +19,7 @@ M_steps_per_D_step: 1
 batch_size: 64
 steps: 30000
 gamma: 0.97
+grad_clip: 10
 #
 swa_step_start: 25000
 #generator hyperparameter:

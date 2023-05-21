@@ -144,9 +144,9 @@ def main(config):
             strict=True,
         )
         generator.eval()
-    d_score, p_score, sig_mmd = full_evaluation(
-        generator, train_dl, test_dl, config
-     )
+        d_score, p_score, sig_mmd = full_evaluation(
+            generator, train_dl, test_dl, config
+        )
 
     return d_score, p_score, sig_mmd
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                 if algo in ["PCFGAN", "TimeGAN"]:
                     logging.info(
                         "Running reconstruction evaluation on {} with {}".format(
-                            dataset, algo
+                            data, algo
                         )
                     )
                     config = load_config(config_dir)
@@ -207,13 +207,13 @@ if __name__ == "__main__":
             if args.gan_algo in ["PCFGAN", "TimeGAN"]:
                 logging.info(
                     "Running reconstruction evaluation on {} with {}".format(
-                        dataset, args.gan_algo
+                        data, args.gan_algo
                     )
                 )
                 config = load_config(config_dir)
                 evaluate_reconstruction(config)
 
-    elif args.gan_algo == "all" and args.gan_algo != "all":
+    elif args.gan_algo == "all" and args.dataset != "all":
         for algo in algos:
             logging.info("Running on {} with {}".format(args.dataset, algo))
             config_dir = pt.join("configs/", algo, args.dataset + ".yaml")
@@ -221,7 +221,7 @@ if __name__ == "__main__":
             if algo in ["PCFGAN", "TimeGAN"]:
                 logging.info(
                     "Running reconstruction evaluation on {} with {}".format(
-                        dataset, algo
+                        args.dataset, algo
                     )
                 )
                 config = load_config(config_dir)
