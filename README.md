@@ -4,7 +4,7 @@ PCF-GAN: generating sequential data via the characteristic function of measures 
 <img align="middle" src="./notebooks/PCF_score_plot_v4.png" width="666" />
 </p>
 
-This repository is the official implementation of the paper entitled "PCF-GAN: generating sequential data via the characteristic function of measures on the path space". The characteristic function on the path space can be thought of as an extension of the characteristic function on $\mathbb{R}^d$ and is illustrated by the figure above. This work demonstrates its effectiveness in the task of time series generation. This work demonstrates its effectiveness in the task of time series generation.   
+This repository is the official implementation of the paper entitled "PCF-GAN: generating sequential data via the characteristic function of measures on the path space". The characteristic function on the path space can be thought of as an extension of the characteristic function on $\mathbb{R}^d$ and is illustrated by the figure above. This work demonstrates its effectiveness in the task of time series generation.  
 
 ## Environment Setup
 The code has been successfully tested using Python 3.9 and PyTorch 1.7 with GPU support. Therefore, we suggest using this version or a later version of Python and PyTorch. A typical process for installing the package dependencies involves creating a new Python virtual environment.
