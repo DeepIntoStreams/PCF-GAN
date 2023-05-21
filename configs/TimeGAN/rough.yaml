@@ -1,0 +1,44 @@
+# gan model, PathChar_GAN,RPathChar_GAN,RCGAN, COTGAN,TimeGAN 
+gan_algo: TimeGAN
+train: True
+pretrained: False
+generator: LSTM
+discriminator: LSTM
+dataset: ROUGH
+
+device: cuda
+seed: 0
+gpu_id : "0"
+n_lags: 200
+
+#hyperparameters:  
+lr_G: 0.001
+lr_D: 0.001 
+D_steps_per_G_step: 2
+batch_size: 64
+steps: 30000 
+gamma: 0.97
+grad_clip: 10
+swa_step_start: 25000 
+#generator hyperparameter:
+G_input_dim: 5 
+G_hidden_dim: 32 
+G_num_layers: 2
+init_fixed: False 
+noise_scale : 0.05
+#discriminator hyperparameter:
+D_hidden_dim: 32 
+D_num_layers: 2 
+D_out_dim: 5 
+
+# config for PCF-GAN
+M_hidden_dim: 10  
+M_num_samples: 6
+lr_M: 0.005
+Lambda1: 50 
+Lambda2: 1
+BM: True
+init_range: 1
+add_time: True
+
+comment: 

@@ -1,0 +1,4 @@
+#dataset: AR, GBM
+dataset: FBM
+device: cuda
+gpu_id : "0"
