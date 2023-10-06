@@ -43,22 +43,143 @@ def ccf_mean(x: torch.tensor):
     # print(ccf.triu(1).mean())
     return ccf.triu(1).mean() * ((n**2) / num_cross)
 
+def ccf_metric(x,y,lag=1):
+    ccf_x = cacf_torch(
+            x, lags=6)
+    ccf_y = cacf_torch(
+            y, lags=6)
+    
+    return torch.abs(ccf_x-ccf_y).sum(1)[lag]
+
+def acf_metric(x,y,dim):
+    acf_x = acf_torch(x,10)
+    acf_y = acf_torch(y,10)
+    return torch.abs(acf_x-acf_y).sum(1)[dim]
 
 def cacf_torch(x, lags: list, dim=(0, 1)):
+    
+    # Define a helper function to get the lower triangular indices for a given dimension
     def get_lower_triangular_indices(n):
         return [list(x) for x in torch.tril_indices(n, n)]
 
+    # Get the lower triangular indices for the input tensor x
     ind = get_lower_triangular_indices(x.shape[2])
-    x = (x - x.mean(dim, keepdims=True)) / x.std(dim, keepdims=True)
+
+    # Standardize the input tensor x along the given dimensions
+    #x = (x - x.mean(dim, keepdims=True)) / x.std(dim, keepdims=True)
+    x = x - x.mean((0, 1))
+    # Split the input tensor into left and right parts based on the lower triangular indices
     x_l = x[..., ind[0]]
     x_r = x[..., ind[1]]
+
+    # Compute the cross-correlation at each lag and store in a list
     cacf_list = list()
-    for i in lags:
+    std = torch.std(x_l, unbiased=False, dim=(0, 1))*torch.std(x_r, unbiased=False, dim=(0, 1))
+    for i in range(lags):
+        # Compute the element-wise product of the left and right parts, shifted by the lag if i > 0
         y = x_l[:, i:] * x_r[:, :-i] if i > 0 else x_l * x_r
-        cacf_i = torch.mean(y, (1))
+
+        # Compute the mean of the product along the time dimension
+        cacf_i = torch.mean(y, dim) / std
+
+        # Append the result to the list of cross-correlations
         cacf_list.append(cacf_i)
-    cacf = torch.cat(cacf_list, 1)
-    return cacf.reshape(cacf.shape[0], -1, len(ind[0]))
+
+    # Concatenate the cross-correlations across lags and reshape to the desired output shape
+    if dim == (0, 1):
+        return torch.stack(cacf_list)
+    else:
+        return torch.cat(cacf_list, 1)
+    #return cacf.reshape(cacf.shape[0], -1, len(ind[0]))
+
+
+
+def histogram_torch(x, n_bins, density=True):
+    a, b = x.min().item(), x.max().item()
+    b = b + 1e-5 if b == a else b
+    # delta = (b - a) / n_bins
+    bins = torch.linspace(a, b, n_bins + 1)
+    delta = bins[1] - bins[0]
+    # bins = torch.arange(a, b + 1.5e-5, step=delta)
+    count = torch.histc(x, bins=n_bins, min=a, max=b).float()
+    if density:
+        count = count / delta / float(x.shape[0] * x.shape[1])
+    return count, bins
+
+
+class Loss(nn.Module):
+    def __init__(
+        self,
+        name,
+        reg=1.0,
+        transform=lambda x: x,
+        threshold=10.0,
+        backward=False,
+        norm_foo=lambda x: x,
+    ):
+        super(Loss, self).__init__()
+        self.name = name
+        self.reg = reg
+        self.transform = transform
+        self.threshold = threshold
+        self.backward = backward
+        self.norm_foo = norm_foo
+
+    def forward(self, x_fake):
+        self.loss_componentwise = self.compute(x_fake)
+        return self.reg * self.loss_componentwise.mean()
+
+    def compute(self, x_fake):
+        raise NotImplementedError()
+
+    @property
+    def success(self):
+        return torch.all(self.loss_componentwise <= self.threshold)
+
+class HistoLoss(nn.Module):
+    def __init__(self, x_real, n_bins=80, **kwargs):
+        super(HistoLoss, self).__init__(**kwargs)
+        self.densities = list()
+        self.locs = list()
+        self.deltas = list()
+        for i in range(x_real.shape[2]):
+            tmp_densities = list()
+            tmp_locs = list()
+            tmp_deltas = list()
+            # Exclude the initial point
+            for t in range(x_real.shape[1]):
+                x_ti = x_real[:, t, i].reshape(-1, 1)
+                d, b = histogram_torch(x_ti, n_bins, density=True)
+                tmp_densities.append(nn.Parameter(d).to(x_real.device))
+                delta = b[1:2] - b[:1]
+                loc = 0.5 * (b[1:] + b[:-1])
+                tmp_locs.append(loc)
+                tmp_deltas.append(delta)
+            self.densities.append(tmp_densities)
+            self.locs.append(tmp_locs)
+            self.deltas.append(tmp_deltas)
+
+    def compute(self, x_fake):
+        loss = list()
+
+        def relu(x):
+            return x * (x >= 0.0).float()
+
+        for i in range(x_fake.shape[2]):
+            tmp_loss = list()
+            # Exclude the initial point
+            for t in range(x_fake.shape[1]):
+                loc = self.locs[i][t].view(1, -1).to(x_fake.device)
+                x_ti = x_fake[:, t, i].contiguous().view(-1, 1).repeat(1, loc.shape[1])
+                dist = torch.abs(x_ti - loc)
+                counter = (
+                    relu(self.deltas[i][t].to(x_fake.device) / 2.0 - dist) > 0.0
+                ).float()
+                density = counter.mean(0) / self.deltas[i][t].to(x_fake.device)
+                abs_metric = torch.abs(density - self.densities[i][t].to(x_fake.device))
+                loss.append(torch.mean(abs_metric, 0))
+        loss_componentwise = torch.stack(loss)
+        return loss_componentwise
 
 
 def non_stationary_acf_torch(X, covariance: bool = False, symmetric=False):

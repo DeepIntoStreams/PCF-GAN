@@ -26,6 +26,8 @@ def main(config):
         config.update({"device": "cuda:0"}, allow_val_change=True)
     else:
         config.update({"device": "cpu"}, allow_val_change=True)
+    config.update({'pretrained':False},allow_val_change=True)
+    config.update({'train':False},allow_val_change=True)
     # torch.cuda.set_per_process_memory_fraction(0.5, 0)
     get_experiment_dir(config)
     from src.datasets.dataloader import get_dataset
@@ -190,14 +192,14 @@ if __name__ == "__main__":
                 logging.info("Running on {} with {}".format(data, algo))
                 config_dir = pt.join("configs/", algo, data + ".yaml")
                 main(load_config(config_dir))
-                if algo in ["PCFGAN", "TimeGAN"]:
-                    logging.info(
-                        "Running reconstruction evaluation on {} with {}".format(
-                            data, algo
-                        )
-                    )
-                    config = load_config(config_dir)
-                    evaluate_reconstruction(config)
+                #if algo in ["PCFGAN", "TimeGAN"]:
+                 #   logging.info(
+                  #      "Running reconstruction evaluation on {} with {}".format(
+                   #         data, algo
+                    #    )
+                    #)
+                    #config = load_config(config_dir)
+                    #evaluate_reconstruction(config)
 
     elif args.dataset == "all" and args.gan_algo != "all":
         for data in dataset:

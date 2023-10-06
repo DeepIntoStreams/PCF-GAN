@@ -12,11 +12,15 @@ from src.evaluations.test_metrics import (
     Sig_mmd,
     kurtosis_torch,
     skew_torch,
+    ccf_metric,
+    acf_metric,
+    HistoLoss
 )
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 import logging
 from src.utils import get_experiment_dir
+from sklearn.manifold import TSNE
 
 
 def _train_classifier(model, train_loader, test_loader, config, epochs=100):
@@ -574,6 +578,7 @@ def plot_summary(fake_dl, real_dl, config, max_lag=None):
         fig.savefig(pt.join(config.exp_dir, "hists_marginals_dim{}.pdf".format(i)))
         plt.close()
     plot_samples(real_dl, fake_dl, config)
+    plot_tsne(real_dl,fake_dl,2000)
 
 
 def compute_predictive_score(
@@ -662,6 +667,67 @@ def compute_predictive_score(
     std_loss = np.std(np.array(test_loss_list))
     return mean_loss, std_loss
 
+def plot_tsne(real_dl, fake_dl, config,num_sample=1000, plot_show=False):
+    # Analysis sample size (for faster computation)
+    sns.set()
+    ori_data = loader_to_tensor(real_dl)
+    generated_data = loader_to_tensor(fake_dl)
+    ori_data = torch.flatten(ori_data,1).numpy()
+    generated_data = torch.flatten(generated_data,1).numpy()
+    anal_sample_no = min([num_sample, len(ori_data)])
+    idx = np.random.permutation(len(ori_data))[:anal_sample_no]
+    # Data preprocessing
+    ori_data = ori_data[idx]
+    generated_data = generated_data[idx]
+    
+    
+    prep_data = np.asarray(ori_data)
+    prep_data_hat = np.asarray(generated_data)
+
+
+
+    #no, seq_len, dim = ori_data.shape
+
+    '''
+    for i in range(anal_sample_no):
+        if (i == 0):
+            prep_data = np.reshape(np.mean(ori_data[0, :, :], 1), [1, seq_len])
+            prep_data_hat = np.reshape(
+                np.mean(generated_data[0, :, :], 1), [1, seq_len])
+        else:
+            prep_data = np.concatenate((prep_data,
+                                        np.reshape(np.mean(ori_data[i, :, :], 1), [1, seq_len])))
+            prep_data_hat = np.concatenate((prep_data_hat,
+                                            np.reshape(np.mean(generated_data[i, :, :], 1), [1, seq_len])))
+    '''
+    # Visualization parameter
+    colors = ["red" for i in range(anal_sample_no)] + \
+        ["blue" for i in range(anal_sample_no)]
+    # Do t-SNE Analysis together
+    prep_data_final = np.concatenate((prep_data, prep_data_hat), axis=0)
+
+    # TSNE anlaysis
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    tsne_results = tsne.fit_transform(prep_data_final)
+
+    # Plotting
+    f, ax = plt.subplots(1)
+    plt.scatter(tsne_results[:anal_sample_no, 0], tsne_results[:anal_sample_no, 1],
+                c=colors[:anal_sample_no], alpha=0.2, label="Original")
+    plt.scatter(tsne_results[anal_sample_no:, 0], tsne_results[anal_sample_no:, 1],
+                c=colors[anal_sample_no:], alpha=0.2, label="Synthetic")
+    ax.legend()
+
+    plt.title('t-SNE plot')
+    plt.xlabel('x-tsne')
+    plt.ylabel('y-tsne')
+    # you might want to save it into a specific path
+    if plot_show:
+        plt.show()
+    else:
+        plt.savefig(pt.join(config.exp_dir, "tsne.png"), dpi=200)
+    plt.close()
+
 
 def full_evaluation(generator, real_train_dl, real_test_dl, config, **kwargs):
     """Evaluate the synthetic generation including discriminative score, predictive score, predictive FID, and predictive KID.
@@ -679,6 +745,11 @@ def full_evaluation(generator, real_train_dl, real_test_dl, config, **kwargs):
     d_scores = []
     p_scores = []
     Sig_MMDs = []
+    acf1=[]
+    acf5=[]
+    ccf1=[]
+    ccf5=[]
+    m_scores = []
     if config.generator == "Conditional_LSTM":
         train_data, train_condition = loader_to_cond_tensor(real_train_dl)
         test_data, test_condition = loader_to_cond_tensor(real_test_dl)
@@ -776,6 +847,13 @@ def full_evaluation(generator, real_train_dl, real_test_dl, config, **kwargs):
                     batch_size=128,
                     config=config,
                 )
+        real = torch.cat(
+            [loader_to_tensor(real_train_dl), loader_to_tensor(real_test_dl)]
+        )
+        fake = torch.cat(
+            [loader_to_tensor(fake_train_dl), loader_to_tensor(fake_test_dl)]
+        )
+        '''
         d_score_mean, d_score_std = compute_discriminative_score(
             real_train_dl,
             real_test_dl,
@@ -800,28 +878,49 @@ def full_evaluation(generator, real_train_dl, real_test_dl, config, **kwargs):
             batch_size=128,
         )
         p_scores.append(p_score_mean)
-        real = torch.cat(
-            [loader_to_tensor(real_train_dl), loader_to_tensor(real_test_dl)]
-        )
-        fake = torch.cat(
-            [loader_to_tensor(fake_train_dl), loader_to_tensor(fake_test_dl)]
-        )
+
 
         sig_mmd = Sig_mmd(real, fake, depth=sig_depth)
+
         while sig_mmd.abs() > 1e3:
             sig_mmd = Sig_mmd(real, fake, depth=sig_depth)
         Sig_MMDs.append(sig_mmd)
+        '''
+        #acf_score1 = acf_metric(real,fake,1)
+        #acf_score5 = acf_metric(real,fake,5)
+        #ccf_score1 = ccf_metric(real,fake,0)
+        #ccf_score5 = ccf_metric(real,fake,5)
+        #acf1.append(acf_score1)
+        #acf5.append(acf_score5)
+        #ccf1.append(ccf_score1)
+        #ccf5.append(ccf_score5)
+        
+        #m_metric = HistoLoss(real)
+        #m_score = m_metric.compute(fake)
+        #m_scores.append(m_score.detach().numpy())
+
+
 
     # plot_samples(real, fake, config)
-    d_mean, d_std = np.array(d_scores).mean(), np.array(d_scores).std()
-    p_mean, p_std = np.array(p_scores).mean(), np.array(p_scores).std()
-    sig_mmd_mean, sig_mmd_std = np.array(Sig_MMDs).mean(), np.array(Sig_MMDs).std()
-    plot_summary(fake_test_dl, real_test_dl, config)
-    logging.info("Evaluation results on model:{} ".format(config.gan_algo))
-    logging.info("discriminative score with mean:{},std: {}".format(d_mean, d_std))
-    logging.info("predictive score with mean:{},std: {}".format(p_mean, p_std))
-    logging.info("sig mmd with mean: {},std: {}".format(sig_mmd_mean, sig_mmd_std))
-    return d_mean, p_mean, sig_mmd_mean
+    #d_mean, d_std = np.array(d_scores).mean(), np.array(d_scores).std()
+    #p_mean, p_std = np.array(p_scores).mean(), np.array(p_scores).std()
+    #sig_mmd_mean, sig_mmd_std = np.array(Sig_MMDs).mean(), np.array(Sig_MMDs).std()
+    #acf1_mean,acf1_std = np.array(acf1).mean(),np.array(acf1).std()
+    #acf5_mean,acf5_std = np.array(acf5).mean(),np.array(acf5).std()
+    #ccf1_mean,ccf1_std = np.array(ccf1).mean(),np.array(ccf1).std()
+    #m_mean,m_std = np.array(m_scores).mean(),np.array(m_scores).std()
+    #plot_summary(fake_test_dl, real_test_dl, config)
+    plot_tsne(real_test_dl,fake_test_dl,config=config)
+    #logging.info("Evaluation results on model:{} ".format(config.gan_algo))
+    #logging.info("m_score with mean: {},std: {}".format(m_mean, m_std))
+    #logging.info("discriminative score with mean:{},std: {}".format(d_mean, d_std))
+    #logging.info("predictive score with mean:{},std: {}".format(p_mean, p_std))
+    #logging.info("sig mmd with mean: {},std: {}".format(sig_mmd_mean, sig_mmd_std))
+    #logging.info("acf1 with mean: {},std: {}".format(acf1_mean, acf1_std))
+    #logging.info("acf5 with mean: {},std: {}".format(acf5_mean, acf5_std))
+    #logging.info("ccf0 with mean: {},std: {}".format(ccf1_mean, ccf1_std))
+    #logging.info("ccf5 with mean: {},std: {}".format(ccf5_mean, ccf5_std))
+    return None, None , None
 
 
 def get_reconstructed_data(config):
