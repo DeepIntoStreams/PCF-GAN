@@ -485,7 +485,7 @@ class RPCFGANTrainer(BaseTrainer):
         toggle_grad(self.char_func1, True)
         self.char_func1.train()
         self.char_optimizer1.zero_grad()
-        char_loss1 = self.char_func1.distance_measure(self.D(x_real), z)
+        char_loss1 = -self.char_func1.distance_measure(self.D(x_real), z)
         char_loss1.backward()
         self.char_optimizer1.step()
         toggle_grad(self.char_func1, False)
