@@ -1032,10 +1032,14 @@ def evaluate_reconstruction(config):
             [loader_to_tensor(fake_train_dl), loader_to_tensor(fake_test_dl)]
         )
 
-        sig_mmd = Sig_mmd(real, fake, depth=sig_depth)
-        while sig_mmd.abs() > 1e3:
+        try:
             sig_mmd = Sig_mmd(real, fake, depth=sig_depth)
-        Sig_MMDs.append(sig_mmd)
+            while sig_mmd.abs() > 1e3:
+                sig_mmd = Sig_mmd(real, fake, depth=sig_depth)
+            Sig_MMDs.append(sig_mmd)
+        except:
+            print("Skipped sigmmd computation because ksig is not installed")
+            pass
 
     # plot_samples(real, fake, config)
     d_mean, d_std = np.array(d_scores).mean(), np.array(d_scores).std()

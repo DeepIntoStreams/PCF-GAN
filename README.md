@@ -12,9 +12,15 @@ The code has been successfully tested using Python 3.9 and PyTorch 1.7 with GPU 
 ```console
 conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 conda install -c conda-forge cupy cudatoolkit=11.7
-pip install git+https://github.com/tgcsaba/ksig.git --no-deps
 pip install -r requirements.txt
 ```
+
+If users want to compute signature-MMD, the following package must be installed.
+```console
+pip install git+https://github.com/tgcsaba/ksig.git --no-deps
+```
+CAUTION: there is a version conflict of ksig package with other dependencies. The package does not affect the training procedure of PCFGAN, hence we recommend users to skip it if one is facing the installation failure. 
+
 The soruce code of the PCF-GAN is in the [PCF-GAN](src/PCFGAN/) subdirectory.
 
 ## Reproducing experiments

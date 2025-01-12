@@ -4,7 +4,6 @@ from src.utils import to_numpy
 import torch
 from torch import nn
 import numpy as np
-import ksig
 from src.utils import AddTime
 
 
@@ -260,6 +259,7 @@ class Loss(nn.Module):
 
 
 def Sig_mmd(X, Y, depth):
+    import ksig
     # convert torch tensor to numpy
     N, L, C = X.shape
     N1, _, C1 = Y.shape
@@ -306,6 +306,7 @@ def Sig_mmd(X, Y, depth):
 
 
 def Sig_mmd_small(X, Y, depth):
+    import ksig
     # convert torch tensor to numpy
     N, L, C = X.shape
     N1, _, C1 = Y.shape
